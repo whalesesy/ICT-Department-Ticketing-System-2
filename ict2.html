@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ICT Ticketing System </title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root{
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --accent-1: #4e73df;
+      --accent-2: #00b894;
+      --muted: #6c757d;
+      --danger: #e74a3b;
+      --shadow: 0 8px 30px rgba(29,33,39,0.06);
+      --radius: 12px;
+      --glass: rgba(255,255,255,0.7);
+    }
+    /* Dark mode variables */
+    :root[data-theme="dark"] {
+      --bg: #0f1724;
+      --card: #0b1220;
+      --accent-1: #5b8def;
+      --accent-2: #2dd4bf;
+      --muted: #94a3b8;
+      --danger: #ff6b6b;
+      --shadow: 0 8px 30px rgba(2,6,23,0.7);
+      --glass: rgba(255,255,255,0.03);
+    }
+
+    * { box-sizing: border-box; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    body { margin:0; background:linear-gradient(135deg,var(--bg), #ffffff); min-height:100vh; color:var(--muted); }
+    header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px 24px; background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); color:white; box-shadow:var(--shadow); }
+    header h1 { margin:0; font-size:18px; letter-spacing:0.2px; font-weight:600; }
+    .top-controls { display:flex; gap:10px; align-items:center; }
+    .btn { padding:8px 12px; border-radius:10px; border:none; cursor:pointer; font-weight:600; box-shadow:none; }
+    .btn-ghost { background:transparent; color:white; opacity:0.95; border:1px solid rgba(255,255,255,0.08); }
+    .btn-primary { background:linear-gradient(90deg,var(--accent-2),var(--accent-1)); color:white; }
+
+    .container { padding:22px; max-width:1200px; margin:16px auto; }
+    .grid { display:grid; grid-template-columns: 260px 1fr; gap:18px; align-items:start; }
+
+    /* Sidebar */
+    .sidebar { background:var(--card); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); min-height:380px; }
+    .nav-item { padding:10px; border-radius:10px; color:var(--muted); display:flex; align-items:center; gap:10px; cursor:pointer; }
+    .nav-item.active, .nav-item:hover { background:linear-gradient(90deg, rgba(78,115,223,0.08), rgba(0,184,148,0.06)); color:var(--accent-1); font-weight:600; }
+
+    /* Main area */
+    .main { display:flex; flex-direction:column; gap:18px; }
+    .card { background:var(--card); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow); }
+    .row { display:flex; gap:18px; align-items:center; }
+    .stat { flex:1; padding:18px; border-radius:12px; background:linear-gradient(180deg, rgba(255,255,255,0.02), var(--glass)); }
+    .stat h3 { margin:0; color:var(--accent-1); }
+    .stat p { margin:6px 0 0 0; color:var(--muted); font-size:13px; }
+
+    /* Forms & tables */
+    label { display:block; font-size:13px; margin-bottom:6px; color:var(--muted); font-weight:600; }
+    input[type="text"], input[type="email"], input[type="password"], select, textarea {
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(100,116,139,0.08); background:transparent;
+      color:var(--muted);
+    }
+    .form-row { display:grid; grid-template-columns: 1fr 1fr; gap:12px; align-items:end; }
+    .small { font-size:13px; color:var(--muted); }
+
+    table { width:100%; border-collapse:collapse; margin-top:12px; }
+    th, td { text-align:left; padding:10px 12px; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--muted); }
+    th { color:var(--accent-1); font-weight:700; font-size:13px; }
+    .action { display:flex; gap:8px; justify-content:flex-end; }
+
+    /* login centered */
+    .login-wrap { display:flex; min-height: calc(100vh - 72px); align-items:center; justify-content:center; padding:20px; }
+    .login-card { width:420px; border-radius:14px; padding:20px; background:var(--card); box-shadow:var(--shadow); }
+    .login-card h2 { margin:0 0 8px 0; color:var(--accent-1); }
+
+    /* small helpers */
+    .muted { color:var(--muted); font-size:13px; }
+    .badge { padding:6px 10px; border-radius:999px; background:rgba(0,0,0,0.04); font-weight:700; color:var(--muted); }
+
+    /* responsive */
+    @media (max-width:900px){
+      .grid { grid-template-columns: 1fr; }
+      .sidebar { order:2; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 class="title">Secure ICT Ticketing System</h1>
+
+<style>
+  .title {
+    text-align: center-right;  
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;  
+    font-size: 2em;  
+    color: #fff;  
+  }
+</style>
+    <div class="top-controls">
+      <div class="small muted" id="user-welcome">Not signed in</div>
+      <button class="btn btn-ghost" id="toggle-theme" title="Toggle dark mode">🌗</button>
+      <button class="btn btn-primary" id="logout-btn" style="display:none">Logout</button>
+    </div>
+  </header>
+
+  <div class="container" id="app">
+    <!-- LOGIN -->
+    <div id="page-login" class="login-wrap">
+      <div class="login-card">
+        <h2>Sign in</h2>
+        <p class="muted">Use demo accounts below or sign in with your credentials.</p>
+
+        <label>Username</label>
+        <input id="login-username" type="text" placeholder="username (e.g. admin, johndoe)" />
+
+        <label>Email</label>
+        <input id="login-email" type="email" placeholder="name@company.co.ke" />
+
+        <label>Password</label>
+        <input id="login-password" type="password" placeholder="password" />
+
+        <label>Role</label>
+        <select id="login-role">
+          <option value="user">User</option>
+          <option value="approver">Approver</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="btn btn-primary" id="btn-login">Sign in</button>
+          <button class="btn" id="btn-show-creds">Show demo credentials</button>
+        </div>
+
+        <div style="margin-top:12px; font-size:13px;">
+          <strong>Demo accounts:</strong>
+          <ul style="margin:6px 0 0 18px;">
+            <li><code>admin</code> / <code>admin123</code> — Admin — admin@gmail.co.ke</li>
+            <li><code>approver</code> / <code>approver123</code> — Approver — approver@gmail.co.ke</li>
+            <li><code>johndoe</code> / <code>password123</code> — User — johndoe@gmail.co.ke</li>
+            <li><code>sarahj</code> / <code>password123</code> — User — sarahj@gmail.co.ke</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN INTERFACE (hidden until login) -->
+    <div id="main-ui" style="display:none;">
+      <div class="grid">
+        <!-- sidebar -->
+        <aside class="sidebar">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;" id="avatar">JD</div>
+            <div>
+              <div id="sidebar-name" style="font-weight:700;color:var(--accent-1)">John Doe</div>
+              <div class="muted" id="sidebar-role">Requester</div>
+            </div>
+          </div>
+
+          <div id="nav-dashboard" class="nav-item active" onclick="navigate('dashboard')">📊 Dashboard</div>
+          <div id="nav-request" class="nav-item" onclick="navigate('request')">📝 New Request</div>
+          <div id="nav-my-requests" class="nav-item" onclick="navigate('myrequests')">📁 My Requests</div>
+
+          <div id="nav-approvals" class="nav-item" onclick="navigate('approvals')" style="display:none">✅ Approvals</div>
+          <div id="nav-inventory" class="nav-item" onclick="navigate('inventory')" style="display:none">📦 Inventory</div>
+          <div id="nav-reports" class="nav-item" onclick="navigate('reports')" style="display:none">📄 Reports</div>
+          <div class="muted" style="margin-top:12px; font-size:13px;">Theme</div>
+          <div style="margin-top:8px;">
+            <button id="toggle-theme-sidebar" class="btn" style="padding:6px 8px;">Toggle theme</button>
+          </div>
+        </aside>
+
+        <!-- main content -->
+        <main class="main">
+          <!-- Dashboard -->
+          <section id="page-dashboard" class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="margin:0;color:var(--accent-1)">Overview</h3>
+                <div class="muted" style="margin-top:6px">Quick stats & charts</div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:center;">
+                <div class="badge" id="total-requests-badge">0 requests</div>
+                <div class="badge" id="total-devices-badge">30 devices</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:16px;">
+              <div class="stat">
+                <h3 id="stat-pending">0</h3>
+                <p>Pending requests</p>
+              </div>
+              <div class="stat">
+                <h3 id="stat-approved">0</h3>
+                <p>Approved</p>
+              </div>
+              <div class="stat">
+                <h3 id="stat-issued">0</h3>
+                <p>Issued</p>
+              </div>
+              <div class="stat">
+                <h3 id="stat-available">0</h3>
+                <p>Available devices</p>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:18px; margin-top:18px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:320px;" class="card">
+                <h4 style="margin:0 0 8px 0;color:var(--accent-1)">Requests by status</h4>
+                <canvas id="chart-status" width="400" height="260"></canvas>
+              </div>
+
+              <div style="flex:1; min-width:320px;" class="card">
+                <h4 style="margin:0 0 8px 0;color:var(--accent-1)">Requests over time</h4>
+                <canvas id="chart-time" width="400" height="260"></canvas>
+              </div>
+            </div>
+          </section>
+
+          <!-- New Request -->
+          <section id="page-request" class="card" style="display:none;">
+            <h3 style="color:var(--accent-1)">Create a new device request</h3>
+            <p class="muted">Request devices — users can view only their own requests.</p>
+            <div style="margin-top:12px;">
+              <label>Device Type</label>
+              <select id="req-device-type">
+                <option value="">Select device</option>
+                <option value="Laptop">Laptop</option>
+                <option value="Phone">Phone</option>
+                <option value="Projector">Projector</option>
+                <option value="Other">Other</option>
+              </select>
+
+              <div class="form-row" style="margin-top:8px;">
+                <div>
+                  <label>Quantity</label>
+                  <input id="req-quantity" type="number" min="1" max="10" value="1" />
+                </div>
+                <div>
+                  <label>Duration</label>
+                  <select id="req-duration">
+                    <option>1 day</option><option>1 week</option><option>2 weeks</option><option>1 month</option><option>3 months</option><option>Permanent</option>
+                  </select>
+                </div>
+              </div>
+
+              <label style="margin-top:8px;">Purpose</label>
+              <textarea id="req-purpose" rows="3" placeholder="Describe purpose..."></textarea>
+
+              <div style="display:flex; gap:8px; margin-top:12px;">
+                <button class="btn btn-primary" onclick="submitRequest()">Submit request</button>
+                <button class="btn" onclick="clearRequestForm()">Reset</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- My Requests -->
+          <section id="page-myrequests" class="card" style="display:none;">
+            <h3 style="color:var(--accent-1)">My Requests</h3>
+            <p class="muted">Requests submitted by you.</p>
+            <table id="table-myrequests">
+              <thead><tr><th>ID</th><th>Device</th><th>Qty</th><th>Purpose</th><th>Duration</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+
+          <!-- Approvals (approver/admin) -->
+          <section id="page-approvals" class="card" style="display:none;">
+            <h3 style="color:var(--accent-1)">Pending Approvals</h3>
+            <p class="muted">Approve or reject requests.</p>
+            <table id="table-approvals">
+              <thead><tr><th>ID</th><th>Requester</th><th>Device</th><th>Qty</th><th>Purpose</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+
+          <!-- Inventory (admin only) -->
+          <section id="page-inventory" class="card" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h3 style="color:var(--accent-1); margin:0">Inventory</h3>
+                <div class="muted small" style="margin-top:6px">Add, edit or remove devices (admin only).</div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn add" onclick="openAddDeviceModal()">+ Add device</button>
+                <button class="btn" onclick="exportInventoryCSV()">Export CSV</button>
+              </div>
+            </div>
+
+            <table id="table-inventory" style="margin-top:12px;">
+              <thead><tr><th>Device ID</th><th>Type</th><th>Model</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </section>
+
+          <!-- Reports (admin) -->
+          <section id="page-reports" class="card" style="display:none;">
+            <h3 style="color:var(--accent-1)">Reports</h3>
+            <p class="muted">Export system summary for audits.</p>
+            <div style="display:flex;gap:10px;margin-top:8px;">
+              <button class="btn btn-primary" onclick="exportFullReport()">Download Full Report (CSV)</button>
+              <button class="btn" onclick="downloadDashboardPDF()">Download Dashboard (PDF)</button>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple modal for adding device (client-side) -->
+  <div id="modal-add-device" style="display:none; position:fixed; inset:0; background: rgba(2,6,23,0.5); align-items:center; justify-content:center;">
+    <div style="width:420px; background:var(--card); padding:16px; border-radius:12px; box-shadow:var(--shadow);">
+      <h3 style="margin:0 0 8px 0">Add Device</h3>
+      <label>Type</label><input id="md-type" type="text" placeholder="Laptop / Phone / Projector" />
+      <label>Model</label><input id="md-model" type="text" placeholder="e.g. Dell Latitude" />
+      <label>Status</label>
+      <select id="md-status"><option>Available</option><option>Issued</option><option>Maintenance</option></select>
+      <div style="display:flex; gap:8px; margin-top:12px; justify-content:flex-end;">
+        <button class="btn" onclick="closeAddDeviceModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmAddDevice()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**************************************************************************
+     * Demo front-end only system
+     * - role-based UI: user sees only own requests, admin sees everything
+     * - approver can approve assigned requests (for demo, can approve any)
+     * - data persisted to sessionStorage/localStorage
+     **************************************************************************/
+
+    // ---------- Demo users + initial data ----------
+    const DEMO_USERS = [
+      { id: 1, username: 'admin', password: 'admin123', name: 'ICT Admin', email: 'admin@gmail.co.ke', role: 'admin' },
+      { id: 2, username: 'approver', password: 'approver123', name: 'Jane Approver', email: 'approver@gmail.co.ke', role: 'approver' },
+      { id: 3, username: 'johndoe', password: 'password123', name: 'John Doe', email: 'johndoe@gmail.co.ke', role: 'user' },
+      { id: 4, username: 'sarahj', password: 'password123', name: 'Sarah Johnson', email: 'sarahj@gmail.co.ke', role: 'user' }
+    ];
+
+    const INIT_INVENTORY = [
+      { id: 'D-1001', type: 'Laptop', model: 'HP ProBook 450', status: 'Available' },
+      { id: 'D-1002', type: 'Projector', model: 'Epson X300', status: 'Issued' },
+      { id: 'D-1003', type: 'Phone', model: 'Samsung A12', status: 'Available' }
+    ];
+
+    const INIT_REQUESTS = [
+      { id: 'REQ-0010', device: 'Phone', quantity: 1, requesterId: 3, requesterName: 'John Doe', purpose: 'Field communication', duration: 'Permanent', status: 'issued', createdAt: Date.now() - 1000*60*60*24*6 },
+      { id: 'REQ-0011', device: 'Projector', quantity: 1, requesterId: 3, requesterName: 'John Doe', purpose: 'Presentation', duration: '1 week', status: 'approved', createdAt: Date.now() - 1000*60*60*24*2 },
+      { id: 'REQ-0012', device: 'Laptop', quantity: 1, requesterId: 4, requesterName: 'Sarah Johnson', purpose: 'Remote work', duration: '3 months', status: 'pending', createdAt: Date.now() - 1000*60*60*4 }
+    ];
+
+    // ---------- storage helpers ----------
+    function load(key, fallback) {
+      try {
+        const raw = sessionStorage.getItem(key) || localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) { return fallback; }
+    }
+    function saveSession(key, value) { sessionStorage.setItem(key, JSON.stringify(value)); }
+    function saveLocal(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+
+    // initialize persisted data only once
+    if (!load('demo_users')) saveSession('demo_users', DEMO_USERS);
+    if (!load('inventory')) saveSession('inventory', INIT_INVENTORY);
+    if (!load('requests')) saveSession('requests', INIT_REQUESTS);
+
+    // global state
+    let state = {
+      users: load('demo_users', DEMO_USERS),
+      inventory: load('inventory', INIT_INVENTORY),
+      requests: load('requests', INIT_REQUESTS),
+      currentUser: null,
+      charts: {}
+    };
+
+    // ---------- UI element refs ----------
+    const pageLogin = document.getElementById('page-login');
+    const mainUi = document.getElementById('main-ui');
+    const userWelcome = document.getElementById('user-welcome');
+    const logoutBtn = document.getElementById('logout-btn');
+    const avatarEl = document.getElementById('avatar');
+    const sidebarName = document.getElementById('sidebar-name');
+    const sidebarRole = document.getElementById('sidebar-role');
+
+    // nav items visibility controls
+    const navApprovals = document.getElementById('nav-approvals');
+    const navInventory = document.getElementById('nav-inventory');
+    const navReports = document.getElementById('nav-reports');
+
+    // bind login
+    document.getElementById('btn-login').addEventListener('click', handleLogin);
+    document.getElementById('btn-show-creds').addEventListener('click', showDemoCredentials);
+    logoutBtn.addEventListener('click', doLogout);
+    document.getElementById('toggle-theme').addEventListener('click', toggleTheme);
+    document.getElementById('toggle-theme-sidebar').addEventListener('click', toggleTheme);
+
+    // ---------- theme ----------
+    function toggleTheme(){
+      const root = document.documentElement;
+      const current = root.getAttribute('data-theme') || 'light';
+      root.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+    }
+    // set initial theme from localStorage
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    // persist theme change
+    document.getElementById('toggle-theme').addEventListener('click', ()=> {
+      const t = document.documentElement.getAttribute('data-theme');
+      localStorage.setItem('theme', t);
+    });
+
+    // ---------- navigation ----------
+    function navigate(page){
+      // hide all page sections inside main area
+      const pages = ['dashboard','request','myrequests','approvals','inventory','reports'];
+      pages.forEach(p => document.getElementById('page-' + p).style.display = 'none');
+      // show selected
+      document.getElementById('page-' + page).style.display = '';
+      // highlight sidebar
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const el = document.getElementById('nav-' + page);
+      if (el) el.classList.add('active');
+      // refresh content for the shown page
+      if (page === 'dashboard') renderDashboard();
+      if (page === 'myrequests') renderMyRequests();
+      if (page === 'approvals') renderApprovals();
+      if (page === 'inventory') renderInventoryTable();
+    }
+
+    // ---------- login / logout ----------
+    function handleLogin(){
+      const username = document.getElementById('login-username').value.trim();
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
+      const password = document.getElementById('login-password').value;
+      const role = document.getElementById('login-role').value;
+
+      if (!username || !email || !password) { alert('Please fill username, email and password.'); return; }
+
+      const user = state.users.find(u => u.username === username && u.email.toLowerCase() === email && u.password === password && u.role === role);
+      if (!user) {
+        alert('Invalid credentials or role mismatch. Use demo credentials listed on the login card.');
+        return;
+      }
+
+      // sign in
+      state.currentUser = user;
+      saveSession('currentUser', user);
+      userSignedIn();
+    }
+
+    function userSignedIn(){
+      pageLogin.style.display = 'none';
+      mainUi.style.display = '';
+      logoutBtn.style.display = '';
+      userWelcome.textContent = `Signed in as ${state.currentUser.name} (${state.currentUser.role})`;
+      avatarEl.textContent = state.currentUser.name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+      sidebarName.textContent = state.currentUser.name;
+      sidebarRole.textContent = state.currentUser.role.charAt(0).toUpperCase() + state.currentUser.role.slice(1);
+
+      // show/hide admin features
+      const isAdmin = state.currentUser.role === 'admin';
+      const isApprover = state.currentUser.role === 'approver';
+      navInventory.style.display = isAdmin ? '' : 'none';
+      navReports.style.display = isAdmin ? '' : 'none';
+      navApprovals.style.display = (isAdmin || isApprover) ? '' : 'none';
+
+      // navigate to dashboard by default
+      navigate('dashboard');
+    }
+
+    function doLogout(){
+      sessionStorage.removeItem('currentUser');
+      state.currentUser = null;
+      mainUi.style.display = 'none';
+      pageLogin.style.display = '';
+      logoutBtn.style.display = 'none';
+      userWelcome.textContent = 'Not signed in';
+      // destroy charts
+      if (state.charts.status) state.charts.status.destroy();
+      if (state.charts.time) state.charts.time.destroy();
+    }
+
+    // ---------- demo credentials view ----------
+    function showDemoCredentials(){
+      alert(
+`Demo credentials:
+1) admin / admin123 — Admin — admin@gmail.co.ke
+2) approver / approver123 — Approver — approver@gmail.co.ke
+3) johndoe / password123 — User — johndoe@gmail.co.ke
+4) sarahj / password123 — User — sarahj@gmail.co.ke`
+      );
+    }
+
+    // ---------- requests management ----------
+    function submitRequest(){
+      const device = document.getElementById('req-device-type').value;
+      const quantity = parseInt(document.getElementById('req-quantity').value) || 1;
+      const duration = document.getElementById('req-duration').value;
+      const purpose = document.getElementById('req-purpose').value.trim();
+
+      if (!device || !purpose) { alert('Please select a device and provide purpose.'); return; }
+
+      const id = 'REQ-' + (Math.floor(Math.random()*9000)+1000);
+      const newReq = {
+        id,
+        device,
+        quantity,
+        requesterId: state.currentUser.id,
+        requesterName: state.currentUser.name,
+        purpose,
+        duration,
+        status: 'pending',
+        createdAt: Date.now()
+      };
+      state.requests.push(newReq);
+      saveSession('requests', state.requests);
+      alert('Request submitted: ' + id);
+      clearRequestForm();
+      navigate('myrequests');
+    }
+
+    function clearRequestForm(){
+      document.getElementById('req-device-type').value = '';
+      document.getElementById('req-quantity').value = 1;
+      document.getElementById('req-duration').value = '1 day';
+      document.getElementById('req-purpose').value = '';
+    }
+
+    function renderMyRequests(){
+      const tbody = document.querySelector('#table-myrequests tbody');
+      tbody.innerHTML = '';
+      const mine = state.requests.filter(r => r.requesterId === state.currentUser.id).sort((a,b)=>b.createdAt - a.createdAt);
+      mine.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.id}</td>
+          <td>${r.device}</td>
+          <td>${r.quantity}</td>
+          <td>${escapeHtml(r.purpose)}</td>
+          <td>${r.duration}</td>
+          <td>${timeAgo(r.createdAt)}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td class="action">${r.status==='pending' ? `<button class="btn" onclick="cancelRequest('${r.id}')">Cancel</button>` : ''}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function cancelRequest(id){
+      if (!confirm('Cancel this request?')) return;
+      const idx = state.requests.findIndex(r=>r.id===id && r.requesterId===state.currentUser.id);
+      if (idx>=0) {
+        state.requests.splice(idx,1);
+        saveSession('requests', state.requests);
+        renderMyRequests();
+        renderDashboard();
+      }
+    }
+
+    // ---------- approvals (approver/admin) ----------
+    function renderApprovals(){
+      const tbody = document.querySelector('#table-approvals tbody');
+      tbody.innerHTML = '';
+      // show pending requests only
+      const pending = state.requests.filter(r=>r.status === 'pending').sort((a,b)=>b.createdAt - a.createdAt);
+      pending.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${r.id}</td>
+          <td>${r.requesterName}</td>
+          <td>${r.device}</td>
+          <td>${r.quantity}</td>
+          <td>${escapeHtml(r.purpose)}</td>
+          <td>${timeAgo(r.createdAt)}</td>
+          <td>${statusBadge(r.status)}</td>
+          <td class="action">
+            <button class="btn" onclick="decideRequest('${r.id}','approved')">Approve</button>
+            <button class="btn" style="background:var(--danger);color:white" onclick="decideRequest('${r.id}','rejected')">Reject</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function decideRequest(id, decision){
+      const r = state.requests.find(x=>x.id===id);
+      if (!r) { alert('Request not found'); return; }
+      r.status = decision;
+      // if approved and inventory has available device — optional: mark issued
+      saveSession('requests', state.requests);
+      renderApprovals();
+      renderMyRequests();
+      renderDashboard();
+      alert(`Request ${id} ${decision}`);
+    }
+
+    // ---------- inventory (admin) ----------
+    function renderInventoryTable(){
+      const tbody = document.querySelector('#table-inventory tbody');
+      tbody.innerHTML = '';
+      state.inventory.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${item.id}</td>
+          <td>${item.type}</td>
+          <td>${item.model}</td>
+          <td>${item.status}</td>
+          <td class="action">
+            <button class="btn" onclick="editDevice('${item.id}')">Edit</button>
+            <button class="btn delete" onclick="removeDevice('${item.id}')">Delete</button>
+          </td>`;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('total-devices-badge').textContent = `${state.inventory.length} devices`;
+    }
+
+    function openAddDeviceModal(){
+      document.getElementById('modal-add-device').style.display = 'flex';
+      document.getElementById('md-type').value = '';
+      document.getElementById('md-model').value = '';
+      document.getElementById('md-status').value = 'Available';
+    }
+    function closeAddDeviceModal(){ document.getElementById('modal-add-device').style.display = 'none'; }
+
+    function confirmAddDevice(){
+      const type = document.getElementById('md-type').value.trim();
+      const model = document.getElementById('md-model').value.trim();
+      const status = document.getElementById('md-status').value;
+      if (!type || !model) { alert('Please fill type and model'); return; }
+      const id = 'D-' + (Math.floor(Math.random()*9000)+1000);
+      state.inventory.push({ id, type, model, status });
+      saveSession('inventory', state.inventory);
+      renderInventoryTable();
+      closeAddDeviceModal();
+    }
+
+    function removeDevice(id){
+      if (!confirm('Delete device ' + id + '?')) return;
+      state.inventory = state.inventory.filter(d=>d.id !== id);
+      saveSession('inventory', state.inventory);
+      renderInventoryTable();
+      renderDashboard();
+    }
+
+    function editDevice(id){
+      const item = state.inventory.find(d=>d.id===id);
+      if (!item) return;
+      // simple prompt-based edit for demo
+      const newModel = prompt('Edit model', item.model);
+      if (newModel !== null) {
+        item.model = newModel;
+        saveSession('inventory', state.inventory);
+        renderInventoryTable();
+      }
+    }
+
+    // ---------- reports / exports ----------
+    function exportInventoryCSV(){
+      const rows = [['Device ID','Type','Model','Status'], ...state.inventory.map(i=>[i.id,i.type,i.model,i.status])];
+      downloadCSV(rows, 'inventory.csv');
+    }
+
+    function exportFullReport(){
+      // combine requests + inventory + summary
+      const summary = [
+        ['Summary'],
+        ['Total requests', state.requests.length],
+        ['Pending', state.requests.filter(r=>r.status==='pending').length],
+        ['Approved', state.requests.filter(r=>r.status==='approved').length],
+        ['Issued', state.requests.filter(r=>r.status==='issued').length],
+        ['Rejected', state.requests.filter(r=>r.status==='rejected').length],
+        [],
+        ['Inventory'],
+        ['Device ID','Type','Model','Status'],
+        ...state.inventory.map(i=>[i.id,i.type,i.model,i.status]),
+        [],
+        ['Requests'],
+        ['Request ID','Device','Qty','Requester','Status','Submitted','Purpose']
+      ];
+      const reqRows = state.requests.map(r => [r.id, r.device, r.quantity, r.requesterName, r.status, new Date(r.createdAt).toLocaleString(), r.purpose]);
+      const rows = summary.concat(reqRows);
+      downloadCSV(rows, 'full_report.csv');
+    }
+
+    function downloadCSV(rows, filename){
+      const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadDashboardPDF(){
+      alert('PDF export not implemented in demo frontend. Use CSV export or integrate a server-side/pdf-lib solution for real export.');
+    }
+
+    // ---------- dashboard render & charts ----------
+    function renderDashboard(){
+      // refresh stats
+      const totalRequests = state.requests.length;
+      const pending = state.requests.filter(r=>r.status==='pending').length;
+      const approved = state.requests.filter(r=>r.status==='approved').length;
+      const issued = state.requests.filter(r=>r.status==='issued').length;
+      const available = state.inventory.filter(i=>i.status==='Available').length;
+
+      document.getElementById('total-requests-badge').textContent = `${totalRequests} requests`;
+      document.getElementById('stat-pending').textContent = pending;
+      document.getElementById('stat-approved').textContent = approved;
+      document.getElementById('stat-issued').textContent = issued;
+      document.getElementById('stat-available').textContent = available;
+
+      // Requests by status pie
+      const ctxStatus = document.getElementById('chart-status').getContext('2d');
+      const statusData = [
+        pending,
+        approved,
+        issued,
+        state.requests.filter(r=>r.status==='rejected').length
+      ];
+      if (state.charts.status) state.charts.status.destroy();
+      state.charts.status = new Chart(ctxStatus, {
+        type: 'pie',
+        data: {
+          labels:['Pending','Approved','Issued','Rejected'],
+          datasets:[{
+            data: statusData,
+            backgroundColor: ['#f6c23e','#00b894','#4e73df','#ff6b6b']
+          }]
+        },
+        options:{
+          plugins:{legend:{position:'bottom'}},
+        }
+      });
+
+      // Requests over last 7 days
+      const ctxTime = document.getElementById('chart-time').getContext('2d');
+      const last7 = [...Array(7)].map((_,i)=> {
+        const day = new Date(); day.setDate(day.getDate() - (6 - i));
+        return day;
+      });
+      const labels = last7.map(d=>d.toLocaleDateString());
+      const counts = last7.map(day => state.requests.filter(r => {
+        const d = new Date(r.createdAt);
+        return d.toDateString() === day.toDateString();
+      }).length);
+      if (state.charts.time) state.charts.time.destroy();
+      state.charts.time = new Chart(ctxTime, {
+        type:'line',
+        data:{ labels, datasets:[{ label:'Requests', data:counts, borderColor:'#36b9cc', backgroundColor:'rgba(54,185,204,0.08)', fill:true, tension:0.3 }]},
+        options:{plugins:{legend:{display:false}}}
+      });
+    }
+
+    // ---------- small utilities ----------
+    function statusBadge(s){
+      const map = { pending: `<span style="background:#fff4e5;padding:6px 10px;border-radius:999px;color:#d97706;font-weight:700">${s}</span>`,
+                    approved: `<span style="background:#e6fffa;padding:6px 10px;border-radius:999px;color:#059669;font-weight:700">${s}</span>`,
+                    issued: `<span style="background:#e8f1ff;padding:6px 10px;border-radius:999px;color:#1e40af;font-weight:700">${s}</span>`,
+                    rejected: `<span style="background:#fff1f2;padding:6px 10px;border-radius:999px;color:#9f1239;font-weight:700">${s}</span>` };
+      return map[s] || `<span class="badge">${s}</span>`;
+    }
+
+    function timeAgo(ts){
+      const diff = Date.now() - ts;
+      const mins = Math.floor(diff/60000);
+      if (mins < 60) return `${mins}m ago`;
+      const hours = Math.floor(mins/60);
+      if (hours < 24) return `${hours}h ago`;
+      const days = Math.floor(hours/24);
+      return `${days}d ago`;
+    }
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // ---------- startup: load session user if exists ----------
+    const storedUser = load('currentUser', null) || sessionStorage.getItem('currentUser') ? JSON.parse(sessionStorage.getItem('currentUser') || localStorage.getItem('currentUser')) : null;
+    if (storedUser) {
+      state.currentUser = storedUser;
+      userSignedIn();
+    } else {
+      // bind Enter key on login form
+      document.getElementById('login-username').addEventListener('keydown', e=>{ if (e.key === 'Enter') handleLogin(); });
+      document.getElementById('login-password').addEventListener('keydown', e=>{ if (e.key === 'Enter') handleLogin(); });
+    }
+
+    // Expose some functions to console for manual testing
+    window.navigate = navigate;
+    window.submitRequest = submitRequest;
+    window.renderMyRequests = renderMyRequests;
+    window.renderApprovals = renderApprovals;
+    window.renderInventoryTable = renderInventoryTable;
+    window.openAddDeviceModal = openAddDeviceModal;
+    window.closeAddDeviceModal = closeAddDeviceModal;
+    window.confirmAddDevice = confirmAddDevice;
+    window.exportInventoryCSV = exportInventoryCSV;
+    window.exportFullReport = exportFullReport;
+    window.removeDevice = removeDevice;
+    window.decideRequest = decideRequest;
+    window.editDevice = editDevice;
+    window.cancelRequest = cancelRequest;
+    window.doLogout = doLogout;
+    window.saveSession = saveSession;
+
+    // ensure inventory and requests loaded into local session state variables (update from sessionStorage)
+    state.inventory = load('inventory', state.inventory);
+    state.requests = load('requests', state.requests);
+    state.users = load('demo_users', state.users);
+
+  </script>
+</body>
+</html>
